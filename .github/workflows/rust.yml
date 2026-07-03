@@ -57,8 +57,9 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
-      # postmaster has no rustfmt.toml; it relies on stable `cargo fmt` defaults.
-      # We do have a deny.toml at the repository root for dependency policy.
+      # The postmaster crate now has its own rust-toolchain.toml (moved into the crate dir)
+      # so local dev and CI both see the same pinned toolchain + components.
+      # We also have a deny.toml at the repository root for dependency policy.
       - name: Run Clippy
         run: cargo clippy --all-targets -- -D warnings
 
@@ -66,7 +67,8 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v1
         with:
           manifest-path: postmaster/Cargo.toml
-          arguments: --all-features --locked
+          # No CLI arguments needed here: deny.toml already sets graph.all-features = true
+          # and we rely on the committed Cargo.lock. The action will use the root deny.toml.
 
       - name: Build
         run: cargo build --locked
