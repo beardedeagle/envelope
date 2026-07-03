@@ -1,0 +1,69 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build book
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install mdBook
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Build book
+        run: nix run nixpkgs#mdbook -- build docs
+
+      # Uncomment once GitHub Pages is enabled for this repo (Settings ->
+      # Pages -> Source: GitHub Actions), and add a `deploy` job needing
+      # `build`, gated on `github.ref == 'refs/heads/main'`, with
+      # `permissions: pages: write, id-token: write` and an `environment:
+      # name: github-pages`, following beardedeagle/strata's pages.yml:
+      #
+      # - name: Upload Pages artifact
+      #   uses: actions/upload-pages-artifact@<pinned-sha> # vN
+      #   with:
+      #     path: docs/book
+
+  # deploy:
+  #   name: Deploy to GitHub Pages
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@<pinned-sha> # vN

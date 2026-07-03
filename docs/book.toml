@@ -1,0 +1,10 @@
+[book]
+title = "envelope"
+description = "Encrypted dotenvx .env files as first-class Nix deployment artifacts for NixOS and nix-darwin"
+authors = ["Randy Thompson"]
+language = "en"
+src = "src"
+
+[output.html]
+git-repository-url = "https://github.com/beardedeagle/envelope"
+edit-url-template = "https://github.com/beardedeagle/envelope/edit/main/docs/{path}"

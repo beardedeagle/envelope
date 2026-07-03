@@ -1,0 +1,14 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt-check:
+      glob: "postmaster/**/*.rs"
+      run: just fmt-check
+    lint:
+      glob: "postmaster/**/*.rs"
+      run: just clippy
+
+pre-push:
+  commands:
+    ci:
+      run: just ci

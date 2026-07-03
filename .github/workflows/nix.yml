@@ -1,0 +1,51 @@
+name: Nix
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: nix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  flake-check:
+    name: flake check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: nix flake check
+        # Build/run checks for the runner's own system only: --all-systems
+        # would try to BUILD foreign-platform derivations (e.g. the
+        # aarch64-linux postmaster on an x86_64 runner) and die on platform
+        # mismatch.
+        run: nix flake check
+
+      - name: nix flake check (eval-only, all systems)
+        # Evaluation catches cross-system regressions without building:
+        # module-eval's serviceConfig assertions run at eval time, so this
+        # exercises them for every Linux system.
+        run: nix flake check --all-systems --no-build
