@@ -1,0 +1,6 @@
+# mdBook build output.
+docs/book/
+
+# SUMMARY.md uses mdBook-required syntax (multiple `#` section headers and
+# 4-space-nested entries) that MD025/MD007 flag but mdBook needs.
+docs/src/SUMMARY.md

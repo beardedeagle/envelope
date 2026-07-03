@@ -1,0 +1,75 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "postmaster/**"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "postmaster/**"
+      - ".github/workflows/rust.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: rust-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: postmaster
+
+jobs:
+  ci:
+    name: CI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: postmaster
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      # postmaster has no rustfmt.toml; it relies on stable `cargo fmt` defaults.
+      # We do have a deny.toml at the repository root for dependency policy.
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Dependency policy (cargo-deny)
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          manifest-path: postmaster/Cargo.toml
+          arguments: --all-features --locked
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: Test
+        run: cargo test --locked
